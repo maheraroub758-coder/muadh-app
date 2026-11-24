@@ -40,7 +40,7 @@ const main=()=>U.role=='main',mask=()=>D.set.mask;
 function theme(){const s=D.set,r=document.documentElement.style;r.setProperty('--bg',s.bg);r.setProperty('--pri',s.pri);r.setProperty('--fc',s.fc);r.setProperty('--fs',s.fs+'px');document.title=s.org}
 function login(){theme();$('#app').innerHTML=`<div id=lg><center>${D.set.logo?`<img src="${D.set.logo}" height=70>`:''}<h3>${E(D.set.org)}</h3></center><label>المستخدم<input id=u></label><label>كلمة المرور<input id=p type=password></label><button onclick=go() style=width:100%>دخول</button><p><small><a href=# onclick="first();return false">إنشاء حساب المدير الأول (مرة واحدة)</a></small></p></div>`}
 
-function hdr(){const s=D.set;return `<header>${s.logo?`<img src="${s.logo}">`:''}<h1>${E(s.org)}<br><small>${E([s.addr,s.p1,s.p2,s.email].filter(Boolean).join(' | '))}</small></h1><span>${E(U.user)}</span><button class=g onclick=upd()>تحديث ⟳</button><button class=g onclick="sb.auth.signOut();U=null;login()">خروج</button></header>`}
+function hdr(){const s=D.set;return `<header>${s.logo?`<img src="${s.logo}">`:''}<h1>${E(s.org)}<br><small>${E([s.addr,s.p1,s.p2,s.email].filter(Boolean).join(' | '))}</small></h1><span>${E(U.user)}</span><button class=g onclick=upd()>تحديث ⟳</button><button class=g onclick=mypw()>كلمة المرور</button><button class=g onclick="sb.auth.signOut();U=null;login()">خروج</button></header>`}
 async function upd(){await load();draw()}
 function show(t){tab=t;q='';S={r:{}};draw()}
 function draw(){theme();const tabs=main()?[['visits','الزيارات'],['search','بحث'],['customers','العملاء'],['reps','المندوبون'],['cls','التصنيفات'],['sts','الحالات'],['users','المستخدمون'],['set','الإعدادات']]:[['search','زياراتي'],['customers','العملاء']];
@@ -49,10 +49,10 @@ tab=='set'?sets():tab=='search'?srch():tbl()}
 const list=t=>t=='visits'&&!main()?D.visits.filter(v=>v.repNo==U.repNo):D[t];
 function tbl(){const sc=SC[tab],ed=main();let r=list(tab).map((x,i)=>[x,i]).filter(([x])=>!q||JSON.stringify(x).includes(q));
 cur={title:sc.t,cols:sc.c,rows:r.map(a=>a[0]),key:tab};
-$('#m').innerHTML=bar(`<input placeholder="بحث..." value="${E(q)}" oninput="q=this.value;tbl2()" id=qq>`+(ed?`<button onclick="edit(-1)">+ إضافة</button>`:''))+`<div class=w id=tw></div>`;tbl2(true)}
+$('#m').innerHTML=bar(`<input placeholder="بحث..." value="${E(q)}" oninput="q=this.value;tbl2()" id=qq>`+(ed?`<button onclick="edit(-1)">+ إضافة</button>`:'')+(ed&&tab=='users'?'<button onclick=bulk()>إنشاء حسابات كل المندوبين</button>':''))+`<div class=w id=tw></div>`;tbl2(true)}
 function tbl2(f){const sc=SC[tab],ed=main();let r=D[tab].map((x,i)=>[x,i]).filter(([x])=>(main()||tab!='visits'||x.repNo==U.repNo)&&(!q||JSON.stringify(x).includes(q)));cur.rows=r.map(a=>a[0]);
 const mk=(k,v)=>mask()&&tab=='users'&&(k=='user'||k=='pass')?'****':E(v);
-$('#tw').innerHTML=`<table><tr>${ed?'<th>#</th>':''}${sc.c.map(c=>`<th>${c[1]}</th>`).join('')}</tr>${r.slice(0,300).map(([x,i])=>`<tr>${ed?`<td><button onclick="edit(${i})">✎</button> <button class=r onclick="del(${i})">🗑</button></td>`:''}${sc.c.map(c=>`<td>${mk(c[0],x[c[0]])}</td>`).join('')}</tr>`).join('')}</table>`+(r.length>300?`<p>يُعرض 300 من ${r.length} — استخدم البحث (التصدير يشمل الكل)</p>`:'')+`<p>العدد: ${r.length}</p>`}
+$('#tw').innerHTML=`<table><tr>${ed?'<th>#</th>':''}${sc.c.map(c=>`<th>${c[1]}</th>`).join('')}</tr>${r.slice(0,300).map(([x,i])=>`<tr>${ed?`<td><button onclick="edit(${i})">✎</button> <button class=r onclick="del(${i})">🗑</button>${tab=='users'?`<button class=g onclick="pw(${i})">🔑</button>`:''}</td>`:''}${sc.c.map(c=>`<td>${mk(c[0],x[c[0]])}</td>`).join('')}</tr>`).join('')}</table>`+(r.length>300?`<p>يُعرض 300 من ${r.length} — استخدم البحث (التصدير يشمل الكل)</p>`:'')+`<p>العدد: ${r.length}</p>`}
 function bar(x){return `<div class=bar>${x}<button class=g onclick=xl()>Excel ⬇</button><button class=g onclick=pdf()>PDF / طباعة</button>${main()?`<label class=b>استيراد Excel<input type=file hidden accept=.xlsx,.xls onchange=imp(this)></label><button class=g onclick=tg()>إرسال تيليغرام</button>`:''}</div>`}
 function edit(i){const sc=SC[tab],o=i<0?{}:D[tab][i];$('#dlg').innerHTML=`<form method=dialog onsubmit="return false"><h3>${i<0?'إضافة':'تعديل'} - ${sc.t}</h3>${sc.c.map(c=>`<label>${c[1]}<input name=${c[0]} value="${E(o[c[0]])}" ${c[2]?`list=L${c[2]}`:''}></label>`).join('')}<datalist id=Lcls>${D.cls.map(x=>`<option>${E(x.name)}`).join('')}</datalist><datalist id=Lsts>${D.sts.map(x=>`<option>${E(x.name)}`).join('')}</datalist><button id=ok>حفظ</button> <button class=g type=button onclick="dlg.close()">إلغاء</button></form>`;
 $('#ok').onclick=async()=>{const n={};$('#dlg').querySelectorAll('input[name]').forEach(e=>n[e.name]=e.value);
@@ -74,5 +74,20 @@ function sets(){const s=D.set,f=[['org','اسم المؤسسة'],['addr','مكا
 $('#m').innerHTML=`<div style="max-width:520px;background:#fff;padding:14px;border-radius:8px">${f.map(a=>`<label>${a[1]}<input type=${a[2]||'text'} value="${E(s[a[0]])}" onchange="D.set['${a[0]}']=this.value;save();theme()"></label>`).join('')}<label>شعار المؤسسة<input type=file accept=image/* onchange=logo(this)></label><label><input type=checkbox style=width:auto ${s.mask?'checked':''} onchange="D.set.mask=this.checked;save()"> إخفاء اسم المستخدم وكلمة المرور (****) في نافذة المستخدمين</label><button onclick=draw()>تطبيق</button> <button class=g onclick=seed()>تحميل بيانات المؤسسة الأولية</button></div>`}
 function logo(el){const r=new FileReader();r.onload=e=>{D.set.logo=e.target.result;save();draw()};r.readAsDataURL(el.files[0])}
 try{const m=new Blob([JSON.stringify({name:'مؤسسة معاذ الحسين',short_name:'معاذ الحسين',display:'standalone',start_url:'.',icons:[{src:LOGO,sizes:'192x192'}]})],{type:'application/json'});const l=document.createElement('link');l.rel='manifest';l.href=URL.createObjectURL(m);document.head.append(l)}catch(e){}
+async function bulk(){const todo=D.reps.filter(r=>r.repNo&&!D.users.some(u=>u.role=='sub'&&String(u.repNo)==String(r.repNo)));
+if(!todo.length)return alert('لكل المندوبين حسابات بالفعل');if(!confirm('سيتم إنشاء '+todo.length+' حساباً. لا تغلق الصفحة أثناء ذلك. متابعة؟'))return;
+const out=[],al='abcdefghjkmnpqrstuvwxyz23456789';
+for(const r of todo){$('#m').innerHTML='<p>جارٍ إنشاء الحسابات: '+out.length+' / '+todo.length+'</p>';
+const user='rep'+String(r.repNo).trim(),pw=Array.from({length:8},()=>al[Math.floor(Math.random()*al.length)]).join('');
+const{data,error}=await sb2.auth.signUp({email:em(user),password:pw});
+if(error||!data.user){out.push([r.repNo,r.repName,user,'فشل: '+((error&&error.message)||'')]);if(error&&/rate/i.test(error.message))break;continue}
+const p=await sb.from('profiles').insert({id:data.user.id,username:user,role:'sub',rep_no:String(r.repNo)});
+out.push([r.repNo,r.repName,user,p.error?'فشل: '+p.error.message:pw]);await new Promise(s=>setTimeout(s,1500))}
+await load();cur={title:'حسابات المندوبين',cols:[['a','رقم المندوب'],['b','اسم المندوب'],['c','اسم المستخدم'],['d','كلمة المرور']],rows:out.map(x=>({a:x[0],b:x[1],c:x[2],d:x[3]}))};
+$('#m').innerHTML='<div class=bar><button class=g onclick=xl()>Excel ⬇</button><button class=g onclick=pdf()>PDF / طباعة</button></div><p><b>احفظ هذه القائمة الآن: كلمات المرور لا تُعرض مرة أخرى.</b></p><div class=w><table><tr><th>رقم</th><th>الاسم</th><th>المستخدم</th><th>كلمة المرور</th></tr>'+out.map(x=>'<tr>'+x.map(v=>'<td>'+E(v)+'</td>').join('')+'</tr>').join('')+'</table></div>'}
+
+async function pw(i){const u=D.users[i],p=prompt('كلمة المرور الجديدة للمستخدم '+u.user+' (6 أحرف فأكثر)');if(!p)return;if(p.length<6)return alert('6 أحرف على الأقل');const{error}=await sb.rpc('admin_set_password',{uid:u._id,pw:p});if(error)return err(error);alert('تم تغيير كلمة المرور')}
+async function mypw(){const p=prompt('كلمة المرور الجديدة (6 أحرف فأكثر)');if(!p)return;if(p.length<6)return alert('6 أحرف على الأقل');const{error}=await sb.auth.updateUser({password:p});if(error)return err(error);alert('تم تغيير كلمة المرور')}
+
 loadSet().then(async()=>{const{data:{session}}=await sb.auth.getSession();session?enter():login()});
 </script></body></html>
